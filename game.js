@@ -6,16 +6,23 @@
   const CONFIG = {
     maxHp: 100,
     levelDurationMs: 10000,
-    spawnStartMs: 1150,
-    spawnMinMs: 330,
-    spawnStepMs: 72,
-    enemyLifeStartMs: 2500,
-    enemyLifeMinMs: 900,
-    enemyLifeStepMs: 115,
-    missDamageBase: 11,
-    missDamageScale: 1.4,
-    maxEnemiesStart: 4,
-    maxEnemiesCap: 10,
+    startSpawnDelayMs: 1500,
+    spawnStartMs: 1580,
+    spawnMinMs: 520,
+    spawnStepMs: 58,
+    enemyLifeStartMs: 3600,
+    enemyLifeMinMs: 1400,
+    enemyLifeStepMs: 90,
+    missDamageBase: 7,
+    missDamageScale: 0.9,
+    earlyProtectionMs: 14000,
+    earlyDamageMultiplier: 0.65,
+    eliteUnlockMs: 9000,
+    eliteChanceStart: 0.05,
+    eliteChanceStep: 0.015,
+    eliteChanceCap: 0.28,
+    maxEnemiesStart: 3,
+    maxEnemiesCap: 8,
     survivalScorePerSecond: 1,
   };
 
@@ -39,6 +46,7 @@
     timeValue: document.getElementById("time-value"),
     levelValue: document.getElementById("level-value"),
     bestValue: document.getElementById("best-value"),
+    statusText: document.getElementById("status-text"),
     finalScore: document.getElementById("final-score"),
     finalTime: document.getElementById("final-time"),
     finalBest: document.getElementById("final-best"),
@@ -99,6 +107,8 @@
     state.reviveUsed = false;
     state.doubledUsed = false;
     state.finalScore = 0;
+    ui.reviveBtn.textContent = "观看广告复活";
+    ui.doubleBtn.textContent = "观看广告领取双倍结算";
 
     toggle(ui.startScreen, true);
     toggle(ui.endScreen, false);
@@ -123,6 +133,9 @@
     state.reviveUsed = false;
     state.doubledUsed = false;
     state.finalScore = 0;
+    state.enemyId = 0;
+    ui.reviveBtn.textContent = "观看广告复活";
+    ui.doubleBtn.textContent = "观看广告领取双倍结算";
 
     toggle(ui.startScreen, false);
     toggle(ui.endScreen, false);
@@ -130,9 +143,9 @@
     toggle(ui.playScreen, true);
 
     renderHud();
-    scheduleSpawn(220);
+    scheduleSpawn(CONFIG.startSpawnDelayMs);
     runFrame();
-    showToast("Survive as long as possible.", 1000);
+    showToast("开局缓冲：先看清目标，再连续点击。", 1200);
   }
 
   function runFrame(now = performance.now()) {
@@ -173,7 +186,7 @@
     }
 
     const id = ++state.enemyId;
-    const isElite = Math.random() < Math.min(0.12 + state.level * 0.02, 0.42);
+    const isElite = Math.random() < getEliteChance();
     const maxSize = isElite ? 84 : 76;
     const minSize = isElite ? 60 : 50;
     const size = clamp(randomInt(minSize, maxSize) - state.level, 44, 88);
@@ -203,7 +216,7 @@
       element: enemy,
       hp: hitPoints,
       points: isElite ? 26 : 10,
-      damage: Math.round(CONFIG.missDamageBase + (state.level - 1) * CONFIG.missDamageScale + (isElite ? 3 : 0)),
+      damage: Math.round(CONFIG.missDamageBase + (state.level - 1) * CONFIG.missDamageScale + (isElite ? 2 : 0)),
       timer: 0,
     };
 
@@ -274,9 +287,14 @@
 
     const center = getEnemyCenter(target.element);
     destroyEnemy(target, true, center.x, center.y);
-    applyDamage(target.damage);
-    spawnFloatText(`-${target.damage} HP`, center.x, center.y, "#ffd8df");
-    showToast(`Breach! -${target.damage} HP`, 900);
+    const damageTaken = getEscapeDamage(target.damage);
+    applyDamage(damageTaken);
+    spawnFloatText(`-${damageTaken} 耐久`, center.x, center.y, "#ffd8df");
+    if (isEarlyProtectionActive()) {
+      showToast(`漏怪！开局减伤中 -${damageTaken} 耐久`, 900);
+    } else {
+      showToast(`漏怪！-${damageTaken} 耐久`, 900);
+    }
     triggerShake();
   }
 
@@ -319,8 +337,9 @@
     toggle(ui.endScreen, true);
 
     ui.reviveBtn.disabled = state.reviveUsed;
+    ui.reviveBtn.textContent = state.reviveUsed ? "复活机会已使用" : "观看广告复活";
     ui.doubleBtn.disabled = state.doubledUsed;
-    ui.doubleBtn.textContent = state.doubledUsed ? "x2 Reward Claimed" : "Watch Ad for x2 Reward";
+    ui.doubleBtn.textContent = state.doubledUsed ? "双倍结算已领取" : "观看广告领取双倍结算";
 
     updateEndSummary();
   }
@@ -335,12 +354,13 @@
 
     if (!rewarded) {
       ui.reviveBtn.disabled = false;
-      showToast("Ad was skipped or unavailable.", 1000);
+      showToast("未获得复活奖励，请稍后重试。", 1000);
       return;
     }
 
     state.reviveUsed = true;
     state.hp = Math.max(30, Math.round(CONFIG.maxHp * 0.4));
+    ui.reviveBtn.textContent = "复活机会已使用";
 
     toggle(ui.endScreen, false);
     toggle(ui.hud, true);
@@ -352,10 +372,10 @@
 
     clearEnemies();
     renderHud();
-    scheduleSpawn(280);
+    scheduleSpawn(900);
     runFrame();
 
-    showToast("Revived. Keep tapping.", 1000);
+    showToast("复活成功，稳住节奏继续守线。", 1000);
   }
 
   async function handleDoubleReward() {
@@ -368,7 +388,7 @@
 
     if (!rewarded) {
       ui.doubleBtn.disabled = false;
-      showToast("Ad was skipped or unavailable.", 1000);
+      showToast("未获得双倍奖励，请稍后重试。", 1000);
       return;
     }
 
@@ -377,10 +397,10 @@
     persistBest(state.finalScore);
 
     ui.doubleBtn.disabled = true;
-    ui.doubleBtn.textContent = "x2 Reward Claimed";
+    ui.doubleBtn.textContent = "双倍结算已领取";
 
     updateEndSummary();
-    showToast(`Reward doubled: ${state.finalScore}`, 1200);
+    showToast(`双倍结算生效：${state.finalScore} 分`, 1200);
   }
 
   function stopRunLoop() {
@@ -409,6 +429,10 @@
     ui.timeValue.textContent = formatTime(state.elapsedMs);
     ui.levelValue.textContent = String(state.level);
     ui.bestValue.textContent = String(state.bestScore);
+
+    if (ui.statusText) {
+      ui.statusText.textContent = getStatusText();
+    }
   }
 
   function updateEndSummary() {
@@ -447,16 +471,61 @@
 
   function getSpawnIntervalMs() {
     const raw = CONFIG.spawnStartMs - (state.level - 1) * CONFIG.spawnStepMs;
-    return clamp(raw + randomInt(-90, 90), CONFIG.spawnMinMs, CONFIG.spawnStartMs);
+    return clamp(raw + randomInt(-70, 70), CONFIG.spawnMinMs, CONFIG.spawnStartMs);
   }
 
   function getEnemyLifeMs() {
     const raw = CONFIG.enemyLifeStartMs - (state.level - 1) * CONFIG.enemyLifeStepMs;
-    return clamp(raw + randomInt(-140, 140), CONFIG.enemyLifeMinMs, CONFIG.enemyLifeStartMs);
+    return clamp(raw + randomInt(-110, 110), CONFIG.enemyLifeMinMs, CONFIG.enemyLifeStartMs);
   }
 
   function getEnemyCap() {
-    return clamp(CONFIG.maxEnemiesStart + Math.floor((state.level - 1) / 2), CONFIG.maxEnemiesStart, CONFIG.maxEnemiesCap);
+    return clamp(CONFIG.maxEnemiesStart + Math.floor((state.level - 1) / 3), CONFIG.maxEnemiesStart, CONFIG.maxEnemiesCap);
+  }
+
+  function getEliteChance() {
+    if (state.elapsedMs < CONFIG.eliteUnlockMs) {
+      return 0;
+    }
+
+    const scaled = CONFIG.eliteChanceStart + Math.max(0, state.level - 2) * CONFIG.eliteChanceStep;
+    return clamp(scaled, 0, CONFIG.eliteChanceCap);
+  }
+
+  function isEarlyProtectionActive() {
+    return state.elapsedMs < CONFIG.earlyProtectionMs;
+  }
+
+  function getEscapeDamage(baseDamage) {
+    const multiplier = isEarlyProtectionActive() ? CONFIG.earlyDamageMultiplier : 1;
+    return Math.max(1, Math.round(baseDamage * multiplier));
+  }
+
+  function getStatusText() {
+    if (!state.running) {
+      return "规则：点敌人得分，漏怪扣耐久，每秒 +1 生存分。";
+    }
+
+    if (state.elapsedMs < CONFIG.startSpawnDelayMs) {
+      const left = Math.max(0, CONFIG.startSpawnDelayMs - state.elapsedMs);
+      return `开局缓冲中：约 ${(left / 1000).toFixed(1)} 秒后出现敌人。`;
+    }
+
+    if (isEarlyProtectionActive()) {
+      const left = Math.ceil((CONFIG.earlyProtectionMs - state.elapsedMs) / 1000);
+      const reduction = Math.round((1 - CONFIG.earlyDamageMultiplier) * 100);
+      return `前期护航中：漏怪伤害降低 ${reduction}%（剩余约 ${left} 秒）。`;
+    }
+
+    if (state.hp <= 30) {
+      return "耐久偏低：优先清理靠边目标，避免连续漏怪。";
+    }
+
+    if (state.level >= 4) {
+      return "高压阶段：敌人更快更多，优先点掉精英目标。";
+    }
+
+    return "得分 = 击败得分 + 生存分（每秒 +1）。";
   }
 
   function spawnTapSparks(x, y, count) {
@@ -552,7 +621,7 @@
         }
       }
 
-      showToast(`Mock ad: ${placement.replace("_", " ")}`, 700);
+      showToast(`模拟广告：${placement === "revive" ? "复活奖励" : "双倍结算奖励"}`, 700);
       window.setTimeout(() => resolve(true), 900);
     });
   }
@@ -562,7 +631,7 @@
   }
 
   function formatTime(ms) {
-    return `${(Math.max(0, ms) / 1000).toFixed(1)}s`;
+    return `${(Math.max(0, ms) / 1000).toFixed(1)}秒`;
   }
 
   function randomInt(min, max) {

@@ -1,67 +1,73 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="description" content="Tap-fast survival H5 MVP with score, HP, revive hook, and escalating difficulty." />
-    <title>Tap Siege - H5 Click Survival MVP</title>
+    <meta name="description" content="纯 HTML/CSS/JS 的 H5 点击生存小游戏，含血量、计分、复活与递进难度。" />
+    <title>点点击破 - 网页生存点击游戏</title>
     <link rel="stylesheet" href="styles.css" />
     <script defer src="game.js"></script>
   </head>
   <body>
-    <div class="app" role="application" aria-label="Tap Siege click survival game">
+    <div class="app" role="application" aria-label="点点击破生存游戏">
       <div class="background-glow" aria-hidden="true"></div>
 
       <section id="start-screen" class="panel panel--centered active" aria-labelledby="start-title">
-        <p class="eyebrow">Mobile-first H5 MVP</p>
-        <h1 id="start-title">Tap Siege</h1>
-        <p class="panel-copy">Tap enemies before they break through. Misses cost HP. Survive as long as you can.</p>
-        <ul class="rules" aria-label="How to play">
-          <li>Tap enemies to score points.</li>
-          <li>Escaped enemies deal damage.</li>
-          <li>Difficulty scales every 10 seconds.</li>
+        <p class="eyebrow">轻量网页生存挑战</p>
+        <h1 id="start-title">点点击破</h1>
+        <p class="panel-copy">目标是尽可能长时间守住防线。点掉敌人拿分，漏怪会掉耐久。</p>
+        <ul class="rules" aria-label="玩法规则">
+          <li>点击敌人可得分：普通敌人 +10，精英敌人 +26（阶段越高额外加分越多）。</li>
+          <li>敌人逃脱会扣耐久，精英伤害更高；耐久降到 0 会进入本局结算。</li>
+          <li>每存活 1 秒额外获得 1 点生存分。</li>
+          <li>约每 10 秒进入更高阶段：生成更快、停留更短、同屏数量更高。</li>
+          <li>开局有短暂缓冲，前期漏怪伤害会降低，先稳住节奏再提速。</li>
         </ul>
-        <button id="start-btn" class="btn btn--primary" type="button">Start Survival</button>
+        <button id="start-btn" class="btn btn--primary" type="button">开始挑战</button>
       </section>
 
-      <section id="hud" class="hud hidden" aria-label="Gameplay HUD">
+      <section id="hud" class="hud hidden" aria-label="对局信息">
         <div class="hud__row">
           <div class="hp">
-            <span class="hp__label">HP</span>
+            <span class="hp__label">耐久</span>
             <div class="hp__bar" aria-hidden="true">
               <div id="hp-fill" class="hp__fill"></div>
             </div>
             <span id="hp-text" class="hp__value">100</span>
           </div>
         </div>
+        <div class="hud__row hud__row--hint">
+          <p id="status-text" class="status-text">规则：点敌人得分，漏怪扣耐久，每秒 +1 生存分。</p>
+        </div>
         <div class="hud__row hud__row--stats">
-          <div class="stat"><span>Score</span><strong id="score-value">0</strong></div>
-          <div class="stat"><span>Time</span><strong id="time-value">0.0s</strong></div>
-          <div class="stat"><span>Level</span><strong id="level-value">1</strong></div>
-          <div class="stat"><span>Best</span><strong id="best-value">0</strong></div>
+          <div class="stat"><span>得分</span><strong id="score-value">0</strong></div>
+          <div class="stat"><span>时间</span><strong id="time-value">0.0秒</strong></div>
+          <div class="stat"><span>阶段</span><strong id="level-value">1</strong></div>
+          <div class="stat"><span>最高分</span><strong id="best-value">0</strong></div>
         </div>
       </section>
 
-      <section id="play-screen" class="play hidden" aria-label="Play area">
+      <section id="play-screen" class="play hidden" aria-label="战斗区域">
         <div id="arena" class="arena" aria-live="polite"></div>
         <div id="fx-layer" class="fx-layer" aria-hidden="true"></div>
       </section>
 
-      <section id="end-screen" class="panel hidden" aria-labelledby="end-title">
-        <p class="eyebrow">Run Complete</p>
-        <h2 id="end-title">Base Overrun</h2>
+      <section id="end-screen" class="panel panel--result hidden" aria-labelledby="end-title">
+        <p class="eyebrow">本局结算</p>
+        <h2 id="end-title">挑战结束</h2>
+        <p class="panel-copy">耐久耗尽，防线失守。查看成绩后可继续挑战更高分。</p>
         <div class="results">
-          <div class="result"><span>Final Score</span><strong id="final-score">0</strong></div>
-          <div class="result"><span>Survived</span><strong id="final-time">0.0s</strong></div>
-          <div class="result"><span>Best Score</span><strong id="final-best">0</strong></div>
+          <div class="result"><span>本局得分</span><strong id="final-score">0</strong></div>
+          <div class="result"><span>存活时间</span><strong id="final-time">0.0秒</strong></div>
+          <div class="result"><span>历史最高</span><strong id="final-best">0</strong></div>
         </div>
         <div class="actions">
-          <button id="revive-btn" class="btn btn--accent" type="button">Watch Ad to Revive</button>
-          <button id="double-btn" class="btn btn--ghost" type="button">Watch Ad for x2 Reward</button>
-          <button id="restart-btn" class="btn btn--primary" type="button">Restart Run</button>
-          <button id="back-btn" class="btn btn--text" type="button">Back to Start</button>
+          <button id="revive-btn" class="btn btn--accent" type="button">观看广告复活</button>
+          <button id="double-btn" class="btn btn--ghost" type="button">观看广告领取双倍结算</button>
+          <button id="restart-btn" class="btn btn--primary" type="button">再来一局</button>
+          <button id="back-btn" class="btn btn--text" type="button">返回开始页</button>
         </div>
-        <p class="panel-note">Ad buttons are mocked placeholders with integration hooks in <code>game.js</code>.</p>
+        <p class="panel-note">广告按钮为占位逻辑，实际项目可接入激励广告接口。</p>
       </section>
 
       <p id="toast" class="toast hidden" aria-live="assertive"></p>

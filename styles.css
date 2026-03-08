@@ -82,6 +82,10 @@ body {
   margin-top: 8px;
 }
 
+.hud__row--hint {
+  margin-top: 8px;
+}
+
 .hp {
   width: 100%;
   display: grid;
@@ -116,6 +120,18 @@ body {
   min-width: 36px;
   text-align: right;
   font-weight: 800;
+}
+
+.status-text {
+  margin: 0;
+  width: 100%;
+  border: 1px solid rgba(157, 226, 255, 0.2);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: #d7ecff;
+  background: rgba(7, 19, 34, 0.58);
 }
 
 .stat {
@@ -266,6 +282,17 @@ body {
   gap: 12px;
 }
 
+.panel--result {
+  border-color: rgba(137, 238, 188, 0.35);
+  background: linear-gradient(180deg, rgba(6, 23, 37, 0.94), rgba(8, 30, 40, 0.95));
+}
+
+.panel--result .eyebrow {
+  color: #a3f2cc;
+  letter-spacing: 0.08em;
+  text-transform: none;
+}
+
 .panel--centered {
   text-align: left;
 }
@@ -307,6 +334,7 @@ body {
   display: grid;
   gap: 6px;
   font-size: 0.96rem;
+  line-height: 1.4;
 }
 
 .results {
@@ -321,7 +349,7 @@ body {
   border: 1px solid rgba(160, 225, 255, 0.21);
   border-radius: 12px;
   padding: 10px 12px;
-  background: rgba(8, 18, 33, 0.72);
+  background: rgba(8, 23, 34, 0.78);
 }
 
 .result span {
