@@ -22,6 +22,9 @@
           <li>每存活 1 秒额外获得 1 点生存分。</li>
           <li>约每 10 秒进入更高阶段：生成更快、停留更短、同屏数量更高。</li>
           <li>开局有短暂缓冲，前期漏怪伤害会降低，先稳住节奏再提速。</li>
+          <li>连续击破可叠连击并积攒狂热能量，爆发后进入高分狂热期。</li>
+          <li>命中会给技能充能，技能满后可手动释放雷暴打击全场敌人。</li>
+          <li>战斗中会随机掉落幸运补给箱，点击可拿回血/分数/能量奖励。</li>
         </ul>
         <button id="start-btn" class="btn btn--primary" type="button">开始挑战</button>
       </section>
@@ -35,6 +38,21 @@
             </div>
             <span id="hp-text" class="hp__value">100</span>
           </div>
+        </div>
+        <div class="hud__row hud__row--fever">
+          <div class="meter">
+            <span class="meter__label">狂热</span>
+            <div class="meter__bar" aria-hidden="true">
+              <div id="fever-fill" class="meter__fill"></div>
+            </div>
+            <span id="fever-text" class="meter__value">0%</span>
+          </div>
+          <button id="skill-btn" class="btn btn--skill" type="button" disabled>
+            技能充能中
+          </button>
+        </div>
+        <div class="hud__row hud__row--mission">
+          <p id="mission-text" class="mission-text">悬赏任务：准备中</p>
         </div>
         <div class="hud__row hud__row--hint">
           <p id="status-text" class="status-text">规则：点敌人得分，漏怪扣耐久，每秒 +1 生存分。</p>
@@ -61,13 +79,29 @@
           <div class="result"><span>存活时间</span><strong id="final-time">0.0秒</strong></div>
           <div class="result"><span>历史最高</span><strong id="final-best">0</strong></div>
         </div>
+        <div id="share-card" class="share-card" aria-label="挑战分享卡">
+          <p id="share-rank" class="share-card__rank">称号：新兵试炼者</p>
+          <h3 id="share-title" class="share-card__title">防线热度刚起步</h3>
+          <p id="share-slogan" class="share-card__slogan">再打一局，把战报甩进群聊。</p>
+          <div class="share-card__stats">
+            <div><span>阶段</span><strong id="share-level">1</strong></div>
+            <div><span>最高连击</span><strong id="share-combo">0</strong></div>
+            <div><span>任务状态</span><strong id="share-mission">未完成</strong></div>
+          </div>
+          <p id="share-challenge" class="share-card__challenge">挑战词：下一位请超分并晒战绩。</p>
+        </div>
+        <p id="share-preview" class="share-preview">
+          复制挑战文案后，直接发到群里约战。
+        </p>
         <div class="actions">
+          <button id="copy-share-btn" class="btn btn--share" type="button">一键复制挑战文案</button>
+          <button id="reroll-share-btn" class="btn btn--ghost" type="button">换一句挑衅词</button>
           <button id="revive-btn" class="btn btn--accent" type="button">观看广告复活</button>
           <button id="double-btn" class="btn btn--ghost" type="button">观看广告领取双倍结算</button>
           <button id="restart-btn" class="btn btn--primary" type="button">再来一局</button>
           <button id="back-btn" class="btn btn--text" type="button">返回开始页</button>
         </div>
-        <p class="panel-note">广告按钮为占位逻辑，实际项目可接入激励广告接口。</p>
+        <p class="panel-note">广告与分享均为前端占位逻辑，可直接接入投放链路。</p>
       </section>
 
       <p id="toast" class="toast hidden" aria-live="assertive"></p>
